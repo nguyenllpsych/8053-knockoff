@@ -91,10 +91,7 @@ ko_gaussian <- function(ns, ps, rhos,
     for (p in ps) {
       for (rho in rhos) {
         
-        ### KNOCK-OFF PROCEDURES ###
-        
-        # benchmark
-        ko_start <- Sys.time()
+        ### SIMULATE DATA ###
         
         # simulation count
         i = i + 1
@@ -111,24 +108,23 @@ ko_gaussian <- function(ns, ps, rhos,
         hit <- sample(x = p, size = p*k)
         beta <- amp * (1:p %in% hit)/sqrt(n)
         Y <- X %*% beta + rnorm(n) # linear model + error
-        
-        # knock-off procedures
+
+        ### MODEL-X KNOCKOFF PROCEDURES ###
+        ko_start <- Sys.time()
         ko_selected <- knockoff.filter(X = X, y = Y, fdr = fdr, 
                                        knockoff = gaussian_knockoffs)$selected
-        
-        # false discovery rate
-        ko_fdr <- sum(beta[ko_selected] == 0) / max(1, length(ko_selected))
-        
-        # benchmark
         ko_end   <- Sys.time()
+        ko_fdr   <- sum(beta[ko_selected] == 0) / max(1, length(ko_selected))
+        ko_miss  <- (length(hit) - sum(hit %in% ko_selected))/length(hit)
         ko_time  <- ko_end - ko_start
-        
+
         ### BENJAMINI-HOCHBERG PROCEDURES ###
         bh_start    <- Sys.time()
         bh_results  <- bh(X = X, Y = Y, fdr = fdr, beta = beta)
         bh_end      <- Sys.time()
         bh_selected <- bh_results$bh_selected
         bh_fdr      <- bh_results$bh_fdr
+        bh_miss     <- (length(hit) - sum(hit %in% bh_selected))/length(hit)
         bh_time     <- bh_end - bh_start
         
         # return results
@@ -138,9 +134,11 @@ ko_gaussian <- function(ns, ps, rhos,
                              k   = k,
                              amp = amp,
                              fdr = fdr,
-                             ko_fdr = ko_fdr,
-                             bh_fdr = bh_fdr,
-                             hit    = sort(hit),
+                             ko_fdr  = ko_fdr,
+                             bh_fdr  = bh_fdr,
+                             ko_miss = ko_miss,
+                             bh_miss = bh_miss,
+                             hit     = sort(hit),
                              ko_selected = ko_selected,
                              bh_selected = bh_selected,
                              ko_time     = ko_time,
