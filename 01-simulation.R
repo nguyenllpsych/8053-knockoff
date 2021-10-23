@@ -16,7 +16,7 @@ libraries <- c("MASS",       # mvrnorm
                "ridge")      # ridge regression in n > p cases
 lapply(libraries, library, character = TRUE)
 
-#### ---- Function definitions ####
+#### ---- Function definitions ---- ####
 
 # function for Benjamini-Hochberg
 bh <- function(X, Y, fdr, beta) {
@@ -157,11 +157,11 @@ ko_gaussian <- function(ns, ps,
   return(results)
 }
 
-#### ---- Simulation p > n---- ####
+#### ---- Simulation p > n ---- ####
 
 # simulation conditions
-ns   <- c(100, 200)            # sample size
-ps   <- c(200, 500)            # number of covariates
+ns   <- c(400)                 # sample size
+ps   <- c(1000)                # number of covariates
 k    <- 0.1                    # % of covar with non-zero coef/total covar
 amp  <- 5                      # signal amplitude
 fdr  <- 0.1                    # false discovery rate      
@@ -169,13 +169,13 @@ fdr  <- 0.1                    # false discovery rate
 # simulation results
 sim_results_hidim <- ko_gaussian(ns = ns, ps = ps, 
                                  k = k, amp = amp, fdr = fdr,
-                                 reps = 10, seed = 8053)
+                                 reps = 100, seed = 8053)[[1]]
 
 #### ---- Simulation n > p ---- ####
 
 # simulation conditions
-ns   <- c(250, 500)            # sample size
-ps   <- c(100, 200)            # number of covariates
+ns   <- c(1000)                # sample size
+ps   <- c(400)                 # number of covariates
 k    <- 0.1                    # % of covar with non-zero coef/total covar
 amp  <- 5                      # signal amplitude
 fdr  <- 0.1                    # false discovery rate       
@@ -183,4 +183,4 @@ fdr  <- 0.1                    # false discovery rate
 # simulation results
 sim_results_fullrank <- ko_gaussian(ns = ns, ps = ps, 
                                     k = k, amp = amp, fdr = fdr,
-                                    reps = 100, seed = 8053)
+                                    reps = 100, seed = 8053)[[1]]
