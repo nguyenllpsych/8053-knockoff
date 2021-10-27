@@ -19,11 +19,12 @@ logis_pow = matrix(NA,rep,4)
 cauchy_fdp = matrix(NA,rep,4)
 cauchy_pow = matrix(NA,rep,4)
 
-for(i in 1:rep){
+i=1
+while(i<=100){
 
 ind = sample(p,k)
 beta = rep(0,p)
-beta[ind] = 4.5 / sqrt(n)
+beta[ind] = 4.5 / sqrt(n) * sample(c(1,-1),k , replace=T)
 fdp = function(selected) sum(beta[selected] == 0) / max(1, length(selected))
 power = function(x) length(intersect(ind,x))/length(ind)
 
@@ -100,7 +101,7 @@ pois_fdp[i,4] = fdp(result$selected)
 pois_pow[i,4] = power(result$selected)
 
 ###logistic
-X = matrix(rlogis(n*p),n)
+X = matrix(rlogis(n*p,s=sqrt(3)/pi),n)
 y = X%*%beta + rnorm(n)
 
 fit = lm(y~X+0)
@@ -148,6 +149,7 @@ cauchy_fdp[i,4] = fdp(result$selected)
 cauchy_pow[i,4] = power(result$selected)
 
 print(i)
+i= i+1
 }
 
 fdp = matrix(NA,5,4)

@@ -28,7 +28,7 @@ for(i in 1:rep){
 
 ind = sample(p,k)
 beta = rep(0,p)
-beta[ind] = 4.5 / sqrt(n) * sample(c(1,-1),ind, replace=T)
+beta[ind] = 4.5 / sqrt(n) * sample(c(1,-1),k, replace=T)
 fdp = function(selected) sum(beta[selected] == 0) / max(1, length(selected))
 power = function(x) length(intersect(ind,x))/length(ind)
 
