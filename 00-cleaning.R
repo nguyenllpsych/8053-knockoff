@@ -93,17 +93,10 @@ for(i in seq(nrow(height_dict))) {
                            Height))
 }
 
-phenotypes$Height <- as.numeric(phenotypes$Height)
-
-# keep only first genotype file per ID
-phenotypes <- phenotypes[!duplicated(phenotypes$user_id), ]
-rownames(phenotypes) <- NULL
-
 # clean genotype_filename
 phenotypes$genotype_filename <- 
   # delete everything before first .
   gsub(pattern = "^.*?\\.", "", phenotypes$genotype_filename)
-
 
 # split everything after . to another column called file
 phenotypes <- phenotypes %>% 
@@ -119,17 +112,70 @@ phenotypes <- phenotypes %>%
                            ".", genotype, ".txt"))
 phenotypes[phenotypes == "unknown"] <- NA # change back to NA
 
+# filter to keep only 23andMe genotype files
+phenotypes <- phenotypes %>% filter(genotype == "23andme")
+
+# keep only first genotype file per ID
+phenotypes <- phenotypes[!duplicated(phenotypes$user_id), ]
+rownames(phenotypes) <- NULL
+
+# variable types
+# Height: num (cm)
+# date_of_birth: num (year)
+# chrom_sex: factor (XX, XY)
+phenotypes$Height <- as.numeric(phenotypes$Height)
+phenotypes$date_of_birth <- as.numeric(phenotypes$date_of_birth)
+phenotypes$chrom_sex[phenotypes$chrom_sex == "other"] <- NA
+phenotypes$chrom_sex <- as.factor(phenotypes$chrom_sex)
+
 # extract file name list to unzip and delete unnecessary columns
-genotype_filename <- pull(phenotypes, filename)
+genotype_filename <- phenotypes %>% select(user_id, filename)
 phenotypes <- phenotypes %>% select(user_id, date_of_birth, chrom_sex, Height)
+
+# sample 250 genotype files
+set.seed(8053)
+genotype <- sample(nrow(genotype_filename), size = 250, replace = FALSE)
+genotype <- genotype_filename[genotype, ]
+
+# save phenotypes objects to include only 250 selected genotypes
+phenotypes_clean <- phenotypes %>% filter(user_id %in% genotype[, "user_id"]) 
+#saveRDS(object = phenotypes_clean, file = "phenotypes_clean.RData")
+
+# clean environment
+rm(height_dict, libraries, phenotypes, phenotypes_clean, genotype_filename, i)
+gc()
 
 # Genotypes ----
 
-# unzip all relevant genotype files
-# unzip(zipfile = "opensnp_datadump.current.zip", files = genotype_filename)
+# unzip all selected genotype files - 250 selected
+# setwd() appropriately
+# unzip(zipfile = "opensnp_datadump.current.zip", files = genotype[, "filename"])
 
 # read in all files
-genotypes <- lapply(genotype_filename[1:648], function(x) {
-  tmp <- try(read.table(paste(x), sep = "\t", header = FALSE))
-  if (!inherits(tmp, 'try-error')) tmp
-})
+# keeping 2 variables: (1) SNP ID and (2) genotype variant
+genotypes <- cbind(user_id = genotype[1, "user_id"],
+                   read.table(genotype[1, "filename"], 
+                              sep = "\t", header = FALSE) %>%
+                     # remove mitochrondrial DNA
+                     filter(V2!= "MT") %>%
+                     # keep only known SNPs in standard databases
+                     filter(grepl("rs", V1)) %>%
+                     # select SNP id and genotype
+                     select(V1, V4) %>%
+                     # long to wide format
+                     spread(., key = V1, value = V4))
+
+for(file in 2:250) {
+  genotypes <- bind_rows(genotypes, 
+                     cbind(user_id = genotype[file, "user_id"],
+                           read.table(genotype[file, "filename"], 
+                                      sep = "\t", header = FALSE) %>%
+                             # remove mitochrondrial DNA
+                             filter(V2!= "MT") %>%
+                             # keep only known SNPs in standard databases
+                             filter(grepl("rs", V1)) %>%
+                             # select SNP id and genotype
+                             select(V1, V4) %>%
+                             # long to wide format
+                             spread(., key = V1, value = V4)))
+}
