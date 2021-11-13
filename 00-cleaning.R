@@ -156,8 +156,8 @@ gc()
 genotypes <- cbind(user_id = genotype[1, "user_id"],
                    read.table(genotype[1, "filename"], 
                               sep = "\t", header = FALSE) %>%
-                     # remove mitochrondrial DNA
-                     filter(V2!= "MT") %>%
+                     # remove mitochrondrial DNA and sex chromosome
+                     filter(V2!= "MT" & V2 != "X" & V2 != "Y") %>%
                      # keep only known SNPs in standard databases
                      filter(grepl("rs", V1)) %>%
                      # select SNP id and genotype
@@ -166,16 +166,21 @@ genotypes <- cbind(user_id = genotype[1, "user_id"],
                      spread(., key = V1, value = V4))
 
 for(file in 2:250) {
-  genotypes <- bind_rows(genotypes, 
-                     cbind(user_id = genotype[file, "user_id"],
-                           read.table(genotype[file, "filename"], 
-                                      sep = "\t", header = FALSE) %>%
-                             # remove mitochrondrial DNA
-                             filter(V2!= "MT") %>%
-                             # keep only known SNPs in standard databases
-                             filter(grepl("rs", V1)) %>%
-                             # select SNP id and genotype
-                             select(V1, V4) %>%
-                             # long to wide format
-                             spread(., key = V1, value = V4)))
+  try <- try(bind_rows(genotypes, 
+                           cbind(user_id = genotype[file, "user_id"],
+                                 read.table(genotype[file, "filename"], 
+                                            sep = "\t", header = FALSE) %>%
+                                   # remove mitochrondrial DNA and sex chromosome
+                                   filter(V2!= "MT" & V2 != "X" & V2 != "Y") %>%
+                                   # keep only known SNPs in standard databases
+                                   filter(grepl("rs", V1)) %>%
+                                   # select SNP id and genotype
+                                   select(V1, V4) %>%
+                                   # long to wide format
+                                   spread(., key = V1, value = V4))))
+  
+  if (class(try) != "try-error") {
+    genotypes <- try
+    cat(file, "genotype files have been loaded and combined. \n")
+  }
 }

@@ -2,6 +2,9 @@
 # MAC OS #
 ##########
 
+# Large data file
+genotypes.RData
+
 # General
 .DS_Store
 .AppleDouble
