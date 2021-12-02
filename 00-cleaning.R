@@ -205,6 +205,23 @@ genotypes_clean[genotypes_clean == "TG"] <- "GT"
 # export RData
 # saveRDS(object = genotypes_clean, file = "genotypes_clean.RData")
 
+### save at most 5% missing ###
+genotypes_5 <- genotypes[, colSums(is.na(genotypes)) < 11]
+
+# mark -- as NA
+genotypes_5[genotypes_5 == "--"] <- NA
+
+# remove observation ID 6965 and 2925 (genotype only has one allele)
+genotypes_5 <- genotypes_5 %>% filter(user_id != 6965 & user_id != 2925)
+
+# remove observation ID 9262 and 77 due to questionable genotype data
+genotypes_5 <- genotypes_5 %>% filter(user_id != 9262 & user_id != 77)
+
+# recode some alleles for consistency
+genotypes_5[genotypes_5 == "TC"] <- "CT"
+genotypes_5[genotypes_5 == "TG"] <- "GT"
+
+
 # Full data ----
 
 # merge genotype and phenotype 
@@ -215,3 +232,14 @@ data <- data %>% filter(!is.na(Height))
 
 # export RData
 # saveRDS(object = data, file = "data_clean.RData")
+
+### full data with at most 10% missing ###
+phenotypes_clean <- readRDS(file = "phenotypes_clean.RData")
+data_5 <- merge(phenotypes_clean, genotypes_5)
+
+# select only users with phenotypes data
+data_5 <- data_5 %>% filter(!is.na(Height))
+                               
+# export RData
+saveRDS(object = data_5, file = "data_5.RData")
+
